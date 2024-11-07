@@ -1,0 +1,55 @@
+module SmartHomeSystem (
+    input clk,
+    input motion_sensor,       
+    input [7:0] temperature,   
+    input door_sensor,         // Door/window sensor for security
+    input [7:0] light_level,   // Light level sensor for smart blinds
+    output reg light_on,       // Output for smart lighting
+    output reg heating_on,     // Output for heating control
+    output reg cooling_on,     // Output for cooling control
+    output reg alarm,          // Output for security alarm
+    output reg motor_control   // Output for smart blinds motor
+);
+
+    // Central controller logic (can be used for integration of all controls)
+    reg [7:0] control_signal;
+    
+    always @(posedge clk) begin
+        // Smart Lighting Control
+        if (motion_sensor) begin
+            light_on <= 1;
+        end else begin
+            light_on <= 0;
+        end
+
+        // Smart Thermostat Control
+        if (temperature > 8'd25) begin // Cooling threshold
+            cooling_on <= 1;
+            heating_on <= 0;
+        end else if (temperature < 8'd18) begin // Heating threshold
+            cooling_on <= 0;
+            heating_on <= 1;
+        end else begin
+            cooling_on <= 0;
+            heating_on <= 0;
+        end
+
+        // Security System Control
+        if (motion_sensor || door_sensor) begin
+            alarm <= 1; // Trigger alarm if motion or door sensor is active
+        end else begin
+            alarm <= 0;
+        end
+
+        // Smart Blinds Control
+        if (light_level > 8'd128) begin // Light level threshold for closing blinds
+            motor_control <= 1;
+        end else begin
+            motor_control <= 0;
+        end
+        
+        // Central controller processing (dummy example)
+        control_signal <= {motion_sensor, temperature[6:0]}; // Example of simple processing
+    end
+
+endmodule
