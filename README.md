@@ -32,42 +32,11 @@
     Door/Window Sensors (Reed switches or magnet sensors).
     Controller: Raspberry Pi or NodeMCU to handle inputs from sensors and cameras.
 
-5. Smart Plugs/Outlets
-
-    Smart Plug Devices (TP-Link, Wemo, Sonoff).
-    Relay Modules to automate regular outlets.
-    Energy Monitoring Chips (INA219, PZEM-004T) if you want to measure power consumption.
-
-6. Voice Assistants
-
-    Voice Assistant Devices: Amazon Echo, Google Home.
-    Microphone Modules for DIY integration with open-source voice assistants (e.g., Mycroft).
-    Software: Alexa API, Google Assistant API.
-
-7. Energy Monitoring
-
-    Smart Plugs with Energy Monitoring (e.g., TP-Link HS110).
-    CT Sensors (current transformer) to measure power consumption of entire circuits.
-    Energy Monitoring ICs (e.g., ADE7753).
-
-8. Smart Appliances
-
-    Wi-Fi Modules (ESP8266/ESP32) to connect basic appliances to the system.
-    Relay Modules for switching appliances on/off.
-    Custom Controllers for smart appliances if no ready-made option is available.
-
-9. Smart Blinds/Curtains
+5. Smart Blinds/Curtains
 
     Stepper Motors or Servo Motors for automated movement.
     LDR Sensors for light-sensitive automation (optional).
     Motor Drivers (L298N or ULN2003) to control the motors.
-
-10. Irrigation Systems
-
-    Soil Moisture Sensors.
-    Water Pumps or Solenoid Valves to control water flow.
-    Relay Modules to turn pumps on/off.
-    Weather API Integration for smart watering based on weather data.
 
 Additional Components
 
