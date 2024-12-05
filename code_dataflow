@@ -1,0 +1,27 @@
+module SmartHomeSystem (
+    input clk,
+    input motion_sensor,       
+    input [7:0] temperature,   
+    input door_sensor,         
+    input [7:0] light_level,   
+    output light_on,           
+    output heating_on,         
+    output cooling_on,         
+    output alarm,              
+    output motor_control       
+);
+
+    // For the lights
+    assign light_on = motion_sensor;
+
+    // For thermostat
+    assign cooling_on = (temperature > 8'd25);
+    assign heating_on = (temperature < 8'd18);
+
+    // For security
+    assign alarm = motion_sensor || door_sensor;
+
+    // For lights
+    assign motor_control = (light_level > 8'd128);
+
+endmodule
