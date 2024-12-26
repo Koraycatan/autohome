@@ -1,5 +1,6 @@
 module SmartHomeSystem (
     input clk,
+    input reset,                // Added reset signal
     input motion_sensor,       
     input [7:0] temperature,   
     input door_sensor,        
@@ -11,45 +12,79 @@ module SmartHomeSystem (
     output reg motor_control   
 );
 
-    // Central controller logic
-    reg [7:0] control_signal;
-    
-    always @(posedge clk) begin
-        // Smart Lighting Control
-        if (motion_sensor) begin
-            light_on <= 1;
-        end else begin
+    // States for the security system
+    typedef enum reg [1:0] {
+        DISARMED = 2'b00,
+        ARMED = 2'b01,
+        TRIGGERED = 2'b10
+    } security_state_t;
+
+    security_state_t security_state;
+
+    // Timer for light control
+    reg [15:0] light_timer;
+
+    // Sequential logic for main system behavior
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            // Reset all outputs and states
             light_on <= 0;
-        end
-
-        // Smart Thermostat Control
-        if (temperature > 8'd25) begin // Cooling threshold
-            cooling_on <= 1;
             heating_on <= 0;
-        end else if (temperature < 8'd18) begin // Heating threshold
             cooling_on <= 0;
-            heating_on <= 1;
-        end else begin
-            cooling_on <= 0;
-            heating_on <= 0;
-        end
-
-        // Security System Control
-        if (motion_sensor || door_sensor) begin
-            alarm <= 1; // Trigger alarm if motion or door sensor is active
-        end else begin
             alarm <= 0;
-        end
-
-        // Smart Blinds Control
-        if (light_level > 8'd128) begin // Light level threshold for closing blinds
-            motor_control <= 1;
-        end else begin
             motor_control <= 0;
-        end
-        
-        // Central controller processing 
-        control_signal <= {motion_sensor, temperature[6:0]}; // Example of simple processing
-    end
+            security_state <= DISARMED;
+            light_timer <= 0;
+        end else begin
+            // Smart Lighting Control
+            if (motion_sensor) begin
+                light_on <= 1;
+                light_timer <= 16'd5000; // Timer value for light delay
+            end else if (light_timer > 0) begin
+                light_timer <= light_timer - 1;
+            end else begin
+                light_on <= 0;
+            end
 
+            // Smart Thermostat Control
+            if (temperature > 8'd25) begin
+                cooling_on <= 1;
+                heating_on <= 0;
+            end else if (temperature < 8'd18) begin
+                cooling_on <= 0;
+                heating_on <= 1;
+            end else begin
+                cooling_on <= 0;
+                heating_on <= 0;
+            end
+
+            // Smart Blinds Control
+            if (light_level > 8'd128) begin
+                motor_control <= 1;
+            end else begin
+                motor_control <= 0;
+            end
+
+            // Security System Control
+            case (security_state)
+                DISARMED: begin
+                    alarm <= 0;
+                    if (/* condition to arm */ 1) begin
+                        security_state <= ARMED;
+                    end
+                end
+                ARMED: begin
+                    if (motion_sensor || door_sensor) begin
+                        security_state <= TRIGGERED;
+                    end
+                end
+                TRIGGERED: begin
+                    alarm <= 1;
+                    if (/* condition to disarm */ 0) begin
+                        security_state <= DISARMED;
+                    end
+                end
+            endcase
+        end
+    end
 endmodule
