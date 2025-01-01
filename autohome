@@ -1,10 +1,11 @@
 module SmartHomeSystem (
     input clk,
-    input reset,                // Added reset signal
+    input reset,
     input motion_sensor,       
     input [7:0] temperature,   
     input door_sensor,        
     input [7:0] light_level,   
+    input [7:0] user_command,  // New input for user commands or instructions
     output reg light_on,       
     output reg heating_on,     
     output reg cooling_on,     
@@ -24,7 +25,25 @@ module SmartHomeSystem (
     // Timer for light control
     reg [15:0] light_timer;
 
-    // Sequential logic for main system behavior
+    // Memory for storing past inputs and commands
+    reg [7:0] memory [0:255];  // 256 bytes of memory
+    reg [7:0] memory_address; // Address pointer
+
+    // Program counter for instruction execution
+    reg [7:0] program_counter;
+
+    // Instruction register
+    reg [7:0] instruction;
+
+    // Example instruction set
+    localparam LIGHT_ON = 8'h01,
+               LIGHT_OFF = 8'h02,
+               SET_ALARM = 8'h03,
+               RESET_ALARM = 8'h04,
+               STORE_TEMP = 8'h05,
+               JUMP_IF_MOTION = 8'h06,
+               NO_OP = 8'hFF;
+
     always @(posedge clk or posedge reset) begin
         if (reset) begin
             // Reset all outputs and states
@@ -35,11 +54,35 @@ module SmartHomeSystem (
             motor_control <= 0;
             security_state <= DISARMED;
             light_timer <= 0;
+            memory_address <= 0;
+            program_counter <= 0;
         end else begin
-            // Smart Lighting Control
+            // Fetch and execute instructions
+            instruction <= memory[program_counter];
+            case (instruction)
+                LIGHT_ON: light_on <= 1;
+                LIGHT_OFF: light_on <= 0;
+                SET_ALARM: alarm <= 1;
+                RESET_ALARM: alarm <= 0;
+                STORE_TEMP: begin
+                    memory[memory_address] <= temperature;
+                    memory_address <= memory_address + 1;
+                end
+                JUMP_IF_MOTION: begin
+                    if (motion_sensor) program_counter <= memory[program_counter + 1];
+                    else program_counter <= program_counter + 2;
+                end
+                NO_OP: program_counter <= program_counter + 1;
+                default: program_counter <= program_counter + 1;
+            endcase
+
+            // Increment program counter for normal flow
+            program_counter <= program_counter + 1;
+
+            // Smart Lighting Control with Timer
             if (motion_sensor) begin
                 light_on <= 1;
-                light_timer <= 16'd5000; // Timer value for light delay
+                light_timer <= 16'd5000;
             end else if (light_timer > 0) begin
                 light_timer <= light_timer - 1;
             end else begin
