@@ -1,0 +1,161 @@
+module topmodule(
+    input clk,
+    input reset,
+    input motion_sensor,
+    input [7:0] temperature,
+    input door_sensor,
+    input [7:0] light_level,
+    input [7:0] user_command,
+    output light_on,
+    output heating_on,
+    output cooling_on,
+    output alarm,
+    output motor_control
+);
+
+
+    wire light_control;
+    wire heat_control;
+    wire cool_control;
+    wire alarm_signal;
+    wire motor_signal;
+
+    // Instantiate submodules
+    SmartLighting lighting (
+        .clk(clk),
+        .reset(reset),
+        .motion_sensor(motion_sensor),
+        .light_timer(),
+        .light_control(light_control)
+    );
+
+    SmartThermostat thermostat (
+        .temperature(temperature),
+        .heat_control(heat_control),
+        .cool_control(cool_control)
+    );
+
+    SmartBlinds blinds (
+        .light_level(light_level),
+        .motor_signal(motor_signal)
+    );
+
+    SecuritySystem security (
+        .clk(clk),
+        .reset(reset),
+        .motion_sensor(motion_sensor),
+        .door_sensor(door_sensor),
+        .alarm_signal(alarm_signal)
+    );
+
+
+    assign light_on = light_control;
+    assign heating_on = heat_control;
+    assign cooling_on = cool_control;
+    assign alarm = alarm_signal;
+    assign motor_control = motor_signal;
+
+endmodule
+
+// Submodule for Smart Lighting
+module SmartLighting (
+    input clk,
+    input reset,
+    input motion_sensor,
+    output reg [15:0] light_timer,
+    output reg light_control
+);
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            light_control <= 0;
+            light_timer <= 0;
+        end else begin
+            if (motion_sensor) begin
+                light_control <= 1;
+                light_timer <= 16'd5000;
+            end else if (light_timer > 0) begin
+                light_timer <= light_timer - 1;
+            end else begin
+                light_control <= 0;
+            end
+        end
+    end
+endmodule
+
+// Submodule for Smart Thermostat
+module SmartThermostat (
+    input [7:0] temperature,
+    output reg heat_control,
+    output reg cool_control
+);
+    always @(*) begin
+        if (temperature > 8'd25) begin
+            cool_control = 1;
+            heat_control = 0;
+        end else if (temperature < 8'd18) begin
+            cool_control = 0;
+            heat_control = 1;
+        end else begin
+            cool_control = 0;
+            heat_control = 0;
+        end
+    end
+endmodule
+
+// Submodule for Smart Blinds
+module SmartBlinds (
+    input [7:0] light_level,
+    output reg motor_signal
+);
+    always @(*) begin
+        if (light_level > 8'd128) begin
+            motor_signal = 1;
+        end else begin
+            motor_signal = 0;
+        end
+    end
+endmodule
+
+// Submodule for Security System
+module SecuritySystem (
+    input clk,
+    input reset,
+    input motion_sensor,
+    input door_sensor,
+    output reg alarm_signal
+);
+    typedef enum reg [1:0] {
+        DISARMED = 2'b00,
+        ARMED = 2'b01,
+        TRIGGERED = 2'b10
+    } security_state_t;
+
+    security_state_t security_state;
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            security_state <= DISARMED;
+            alarm_signal <= 0;
+        end else begin
+            case (security_state)
+                DISARMED: begin
+                    alarm_signal <= 0;
+                    if (1) begin // Placeholder for arming condition
+                        security_state <= ARMED;
+                    end
+                end
+                ARMED: begin
+                    if (motion_sensor || door_sensor) begin
+                        security_state <= TRIGGERED;
+                    end
+                end
+                TRIGGERED: begin
+                    alarm_signal <= 1;
+                    if (0) begin // Placeholder for disarming condition
+                        security_state <= DISARMED;
+                    end
+                end
+            endcase
+        end
+    end
+endmodule
